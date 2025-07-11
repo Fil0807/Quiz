@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Anteprima Domande con LaTeX</title>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/contrib/auto-render.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #36393f;
+      --bg-secondary: #2f3136;
+      --bg-tertiary: #202225;
+      --bg-input: #40444b;
+      --text-primary: #dcddde;
+      --text-secondary: #b9bbbe;
+      --accent: #5865F2;
+      --accent-hover: #4752c4;
+      --correct: #57F287;
+      --incorrect: #ED4245;
+      --selected: #faa81a;
+      --border-radius: 8px;
+      --spacing: 15px;
+      --highlight: rgba(88, 101, 242, 0.3);
+    }
+    
+    body {
+      font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      padding: var(--spacing);
+      max-width: 1200px;
+      margin: auto;
+      line-height: 1.5;
+    }
+    
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--bg-input);
+    }
+    
+    .navigation-bar {
+      margin: 20px 0;
+      padding: var(--spacing);
+      background-color: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      display: flex;
+      justify-content: center;
+    }
+    
+    .nav-button {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s;
+      text-decoration: none;
+      text-align: center;
+    }
+    
+    .nav-button:hover {
+      background-color: var(--accent-hover);
+    }
+    
+    .controls {
+      margin: 20px 0;
+      padding: var(--spacing);
+      background-color: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    
+    input[type="file"] {
+      color: var(--text-primary);
+      padding: 12px;
+      background-color: var(--bg-tertiary);
+      border-radius: var(--border-radius);
+      flex: 1;
+      min-width: 300px;
+    }
+    
+    .domanda-container {
+      background-color: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      padding: var(--spacing);
+      margin-bottom: 25px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border-left: 4px solid var(--accent);
+    }
+    
+    .domanda-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--bg-input);
+    }
+    
+    .domanda-numero {
+      font-size: 1.4em;
+      font-weight: bold;
+      color: var(--accent);
+    }
+    
+    .domanda-testo {
+      font-size: 1.25em;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    
+    .risposte-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .risposta {
+      padding: 15px;
+      background-color: var(--bg-tertiary);
+      border-radius: var(--border-radius);
+      border: 2px solid transparent;
+      position: relative;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .risposta.corretta {
+      border: 2px solid var(--correct);
+    }
+    
+    .latex {
+      display: block;
+      font-size: 1.1em;
+    }
+    
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 30px 0;
+      padding: 15px;
+      background-color: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      font-size: 1.1em;
+    }
+    
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .stat-value {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: var(--accent);
+    }
+    
+    .stat-label {
+      font-size: 0.9em;
+      color: var(--text-secondary);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 1.2em;
+    }
+    
+    .no-domande {
+      text-align: center;
+      padding: 40px;
+      background-color: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      font-size: 1.2em;
+    }
+    
+    /* Scrollbar personalizzata */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-input);
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .risposte-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Anteprima Domande con LaTeX</h1>
+  
+  <div class="navigation-bar">
+    <a href="Quiz.html" class="nav-button">Vai al Quiz</a>
+  </div>
+  
+  <div class="controls">
+    <input type="file" id="fileInput" accept=".json">
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value" id="domandeCount">0</div>
+        <div class="stat-label">Domande</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="risposteCount">0</div>
+        <div class="stat-label">Risposte</div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="anteprimaContainer">
+    <div class="no-domande">Caricamento di "Quiz.json"...</div>
+  </div>
+
+  <script>
+    const katexOptions = {
+      delimiters: [
+        { left: "\\(", right: "\\)", display: false },
+        { left: "\\[", right: "\\]", display: true },
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ],
+      macros: {
+        "\\color": "\\textcolor"
+      }
+    };
+
+    let lastLoadedJson = '';
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        try {
+          localStorage.removeItem('ultimaDomandaVista');
+          lastLoadedJson = event.target.result;
+          const json = JSON.parse(event.target.result);
+          caricaDomande(json);
+        } catch (error) {
+          console.error("Errore nel parsing del JSON:", error);
+          mostraErrore("Formato file non valido");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    function caricaDomande(json) {
+      const anteprimaContainer = document.getElementById('anteprimaContainer');
+      
+      if (!json || !json.QUIZ || !Array.isArray(json.QUIZ)) {
+        mostraErrore("Struttura JSON non valida. Assicurarsi che contenga un array 'QUIZ'.");
+        return;
+      }
+      
+      const domande = json.QUIZ;
+      
+      document.getElementById('domandeCount').textContent = domande.length;
+      
+      const risposteTotali = domande.reduce((total, domanda) => 
+        total + (domanda.risposte ? domanda.risposte.length : 0), 0);
+      document.getElementById('risposteCount').textContent = risposteTotali;
+      
+      anteprimaContainer.innerHTML = '';
+      
+      if (domande.length === 0) {
+        anteprimaContainer.innerHTML = '<div class="no-domande">Nessuna domanda trovata nel file</div>';
+        return;
+      }
+      
+      domande.forEach((domanda, index) => {
+        const domandaElement = document.createElement('div');
+        domandaElement.className = 'domanda-container';
+        domandaElement.id = `domanda-${index}`;
+        
+        const risposteCorrette = [
+          domanda.corretta, 
+          ...(domanda.corretta2 ? [domanda.corretta2] : [])
+        ].filter(Boolean);
+        
+        domandaElement.innerHTML = `
+          <div class="domanda-header">
+            <div class="domanda-numero">Domanda ${index + 1}</div>
+          </div>
+          
+          <div class="domanda-testo latex">${domanda.domanda}</div>
+          
+          <div class="risposte-container">
+            ${domanda.risposte.map(risposta => {
+              const isCorretta = risposteCorrette.includes(risposta);
+              return `
+                <div class="risposta ${isCorretta ? 'corretta' : ''}">
+                  <div class="latex">${risposta}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+        
+        anteprimaContainer.appendChild(domandaElement);
+      });
+      
+      ripristinaPosizione();
+
+      setTimeout(() => {
+        renderMathInElement(anteprimaContainer, katexOptions);
+      }, 100);
+    }
+
+    function mostraErrore(messaggio) {
+      const anteprimaContainer = document.getElementById('anteprimaContainer');
+      anteprimaContainer.innerHTML = `
+        <div class="no-domande" style="color: var(--incorrect);">
+          <strong>Errore:</strong> ${messaggio}
+        </div>
+      `;
+    }
+
+    async function fetchAndLoadQuiz(url) {
+        try {
+            const response = await fetch(url, { cache: 'no-store' }); 
+            if (!response.ok) {
+                throw new Error(`Errore HTTP! stato: ${response.status}`);
+            }
+            const jsonText = await response.text();
+
+            if (jsonText !== lastLoadedJson) {
+                console.log("File 'Quiz.json' aggiornato. Ricaricamento in corso...");
+                lastLoadedJson = jsonText;
+                const json = JSON.parse(jsonText);
+                caricaDomande(json);
+            }
+        } catch (error) {
+            console.error("Errore nel caricamento o parsing del file JSON:", error);
+            mostraErrore(`Impossibile caricare il file "${url}". Assicurati che esista, sia nella stessa cartella e sia un JSON valido.`);
+            if (window.quizPollInterval) {
+                clearInterval(window.quizPollInterval);
+            }
+        }
+    }
+
+    // --- LOGICA DI POSIZIONAMENTO MIGLIORATA ---
+
+    function salvaPosizioneAttuale() {
+        const containers = document.querySelectorAll('.domanda-container');
+        if (containers.length === 0) return;
+
+        // Trova l'elemento la cui parte superiore è più vicina allo zero (il top del viewport)
+        const elementoPiuVicino = Array.from(containers).reduce((prev, curr) => {
+            const prevRect = prev.getBoundingClientRect();
+            const currRect = curr.getBoundingClientRect();
+            // Restituisce quello con la distanza minore (in valore assoluto) dal top (0)
+            return Math.abs(currRect.top) < Math.abs(prevRect.top) ? curr : prev;
+        });
+
+        if (elementoPiuVicino) {
+            localStorage.setItem('ultimaDomandaVista', elementoPiuVicino.id);
+        }
+    }
+
+    function ripristinaPosizione() {
+        const idDomandaSalvata = localStorage.getItem('ultimaDomandaVista');
+        if (idDomandaSalvata) {
+            const elementoTarget = document.getElementById(idDomandaSalvata);
+            if (elementoTarget) {
+                // Scroll istantaneo, senza animazioni
+                elementoTarget.scrollIntoView({ behavior: "auto", block: "start" });
+            }
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      fetchAndLoadQuiz('Quiz.json');
+
+      window.quizPollInterval = setInterval(() => fetchAndLoadQuiz('Quiz.json'), 3000);
+      
+      let scrollTimeout;
+      window.addEventListener('scroll', () => {
+          // Usa un timeout per evitare di chiamare la funzione troppe volte durante lo scroll veloce
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(salvaPosizioneAttuale, 150);
+      });
+
+      renderMathInElement(document.body, katexOptions);
+    });
+  </script>
+</body>
+</html>

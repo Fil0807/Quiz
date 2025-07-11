@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz</title>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/contrib/auto-render.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #36393f;
+      --bg-secondary: #2f3136;
+      --bg-tertiary: #202225;
+      --bg-input: #40444b;
+      --text-primary: #dcddde;
+      --text-secondary: #b9bbbe;
+      --accent: #5865F2;
+      --accent-hover: #4752c4;
+      --correct: #57F287;
+      --incorrect: #ED4245;
+      --selected: #faa81a;
+      --border-radius: 8px;
+      --spacing: 15px;
+      --highlight: rgba(88, 101, 242, 0.3);
+    }
+    
+    body {
+      font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      padding: var(--spacing);
+      max-width: 900px;
+      margin: auto;
+      line-height: 1.5;
+    }
+    
+    h2 {
+      color: white;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .navigation-bar {
+      margin: 20px 0;
+      padding: var(--spacing);
+      background-color: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      display: flex;
+      justify-content: center;
+    }
+    
+    .nav-button {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s;
+      text-decoration: none;
+      text-align: center;
+    }
+    
+    .nav-button:hover {
+      background-color: var(--accent-hover);
+    }
+    
+    .domanda {
+      margin-top: 25px;
+      font-size: 1.25em;
+      padding: var(--spacing);
+      background-color: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .risposta {
+      margin: 12px 0;
+      padding: 12px;
+      background-color: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      border: 2px solid transparent;
+      position: relative;
+    }
+    
+    .risposta:hover {
+      background-color: var(--bg-tertiary);
+      transform: translateY(-2px);
+    }
+    
+    .risposta.selected {
+      border: 2px solid var(--selected);
+      box-shadow: 0 0 0 2px rgba(250, 168, 26, 0.3);
+    }
+    
+    .risposta.highlight {
+      transform: scale(1.02);
+      box-shadow: 0 0 10px rgba(88, 101, 242, 0.5);
+    }
+    
+    .shortcut-badge {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: var(--accent);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85em;
+      font-weight: bold;
+    }
+    
+    .corretta {
+      color: var(--correct);
+      font-weight: bold;
+    }
+    
+    .errata {
+      color: var(--incorrect);
+    }
+    
+    details summary {
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+      padding: 8px;
+      background-color: var(--bg-tertiary);
+      border-radius: var(--border-radius);
+    }
+    
+    .box-risposte {
+      margin-left: 20px;
+      font-size: 0.95em;
+      padding: var(--spacing);
+      background-color: var(--bg-tertiary);
+      border-radius: var(--border-radius);
+      margin-top: 10px;
+    }
+    
+    .controls {
+      margin: 20px 0;
+      padding: var(--spacing);
+      background-color: var(--bg-secondary);
+      border-radius: var(--border-radius);
+    }
+    
+    .feedback-correzione {
+      margin-top: 15px;
+      padding: var(--spacing);
+      background-color: var(--bg-tertiary);
+      border-radius: var(--border-radius);
+      border-left: 4px solid var(--incorrect);
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .form-group label {
+      display: inline-block;
+      width: 200px; /* Adjust as needed */
+      margin-bottom: 8px;
+      flex-shrink: 0; /* Prevent label from shrinking */
+    }
+
+    input[type="number"] {
+      width: 80px;
+      padding: 8px;
+      background-color: var(--bg-input);
+      border: none;
+      border-radius: 4px;
+      color: var(--text-primary);
+    }
+    
+    input[type="file"] {
+      color: var(--text-primary);
+      padding: 8px;
+      background-color: var(--bg-tertiary);
+      border-radius: var(--border-radius);
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    
+    .warning {
+      color: #faa81a;
+      font-size: 0.9em;
+      margin-top: 5px;
+      width: 100%;
+    }
+    
+    .btn-container {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+    }
+    
+    #controllaBtn, #nextBtn {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s;
+      flex: 1;
+    }
+    
+    #nextBtn {
+      background-color: var(--correct);
+      display: none;
+    }
+    
+    #controllaBtn:hover {
+      background-color: var(--accent-hover);
+    }
+    
+    #nextBtn:hover {
+      background-color: #3ecf6e;
+    }
+    
+    .shortcut-hint {
+      font-size: 0.85em;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      font-style: italic;
+    }
+    
+    #statistiche {
+      margin-top: 25px;
+      padding: var(--spacing);
+      background-color: var(--bg-secondary);
+      border-radius: var(--border-radius);
+    }
+    
+    #erroriDettagli {
+      margin-top: 20px;
+    }
+    
+    #quizContainer {
+      padding: 0 10px;
+    }
+    
+    .keyboard-shortcuts {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: var(--bg-tertiary);
+      border-radius: var(--border-radius);
+      font-size: 0.9em;
+    }
+    
+    .keyboard-shortcuts h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: var(--text-secondary);
+    }
+    
+    .shortcut-item {
+      display: flex;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    
+    .key {
+      background-color: var(--bg-input);
+      border-radius: 4px;
+      padding: 2px 8px;
+      margin-right: 10px;
+      font-family: monospace;
+      min-width: 30px;
+      text-align: center;
+    }
+    
+    /* Scrollbar personalizzata */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-input);
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+    
+    /* Toggle Switch Styles */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 10px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--incorrect); /* Red for OFF */
+      -webkit-transition: .4s;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      -webkit-transition: .4s;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: var(--correct); /* Green for ON */
+    }
+
+    input:focus + .toggle-slider {
+      box-shadow: 0 0 1px var(--correct);
+    }
+
+    input:checked + .toggle-slider:before {
+      -webkit-transform: translateX(26px);
+      -ms-transform: translateX(26px);
+      transform: translateX(26px);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .form-group {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .form-group label {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      
+      input[type="number"] {
+        width: 100%;
+      }
+      
+      .btn-container {
+        flex-direction: column;
+      }
+      
+      .risposta {
+        padding-right: 50px;
+      }
+      .toggle-container {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>Quiz</h2>
+  
+  <div class="navigation-bar">
+    <a href="Render.html" class="nav-button">Anteprima Domande</a>
+  </div>
+  
+  <input type="file" id="fileInput" accept=".json">
+  
+  <div class="controls" id="quizControls">
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="randomOrder" checked>
+        Randomizza ordine domande
+      </label>
+    </div>
+    
+    <div class="toggle-container">
+      <label for="questionLoadToggle">Carica tutte le domande:</label>
+      <label class="toggle-switch">
+        <input type="checkbox" id="questionLoadToggle" checked> <span class="toggle-slider"></span>
+      </label>
+      <span id="loadModeText">Tutte le domande</span>
+    </div>
+
+    <div id="numQuestionsFields" style="display: none;">
+      <div class="form-group">
+        <label for="numDomande">Numero di domande da caricare:</label>
+        <input type="number" id="numDomande" min="1" value="10">
+      </div>
+    </div>
+  </div>
+  
+  <div id="quizContainer"></div>
+  <div class="btn-container">
+    <button id="controllaBtn" onclick="controllaRisposta()">Controlla Risposta</button>
+    <button id="nextBtn" onclick="avantiManualmente()">Avanti (Spazio)</button>
+  </div>
+  <p id="feedback"></p>
+  <div id="statistiche"></div>
+  <div id="erroriDettagli"></div>
+
+  <div class="keyboard-shortcuts">
+    <h3>Scorciatoie da tastiera:</h3>
+    <div class="shortcut-item">
+      <div class="key">Spazio</div>
+      <div>Invia risposta / Avanti</div>
+    </div>
+    <div class="shortcut-item">
+      <div class="key">1-9</div>
+      <div>Seleziona risposta</div>
+    </div>
+  </div>
+
+  <script>
+    let domande = [];
+    let indiceCorrente = 0;
+    let giuste = 0;
+    let errate = 0;
+    let risposteErrate = [];
+    let numeroDomandeSelezionate = 10;
+    let timeoutErrore = null;
+    const katexOptions = {
+      delimiters: [
+        { left: "\\(", right: "\\)", display: false },
+        { left: "\\[", right: "\\]", display: true },
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ]
+    };
+
+    // Gestione shortcut tastiera
+    document.addEventListener('keydown', function(e) {
+      // Barra spaziatrice (codice 32)
+      if (e.keyCode === 32) {
+        e.preventDefault(); // Previene lo scroll della pagina
+        
+        const nextBtn = document.getElementById('nextBtn');
+        const controllaBtn = document.getElementById('controllaBtn');
+        
+        // Se il pulsante "Avanti" è visibile, cliccalo
+        if (nextBtn.style.display !== 'none') {
+          nextBtn.click();
+        } 
+        // Altrimenti se siamo in una domanda, clicca "Controlla Risposta"
+        else if (controllaBtn.style.display !== 'none' && indiceCorrente < domande.length) {
+          controllaBtn.click();
+        }
+      }
+      
+      // Tasti numerici (1-9) per selezionare le risposte
+      if (e.key >= '1' && e.key <= '9') {
+        const index = parseInt(e.key) - 1;
+        const risposte = document.querySelectorAll('.risposta');
+        
+        if (index < risposte.length) {
+          e.preventDefault();
+          // Deseleziona tutte le risposte
+          risposte.forEach(r => r.classList.remove('selected'));
+          // Seleziona solo la risposta corrispondente al tasto premuto
+          risposte[index].classList.add('selected');
+          
+          // Effetto visivo di highlight
+          risposte[index].classList.add('highlight');
+          setTimeout(() => risposte[index].classList.remove('highlight'), 300);
+        }
+      }
+    });
+
+    // Gestione dello switch per il caricamento delle domande
+    document.getElementById('questionLoadToggle').addEventListener('change', function() {
+        const numQuestionsFields = document.getElementById('numQuestionsFields');
+        const loadModeText = document.getElementById('loadModeText');
+
+        if (this.checked) { // Checked = ON (destra), carica tutte
+            numQuestionsFields.style.display = 'none';
+            loadModeText.textContent = 'Tutte le domande';
+        } else { // Unchecked = OFF (sinistra), seleziona numero
+            numQuestionsFields.style.display = 'block';
+            loadModeText.textContent = 'Numero specifico di domande';
+        }
+    });
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const json = JSON.parse(event.target.result);
+        const randomOrder = document.getElementById('randomOrder').checked;
+        const loadAllQuestions = document.getElementById('questionLoadToggle').checked;
+        
+        let allQuestionsFromJSON = json.QUIZ; 
+        let questionsToLoad = [];
+
+        if (loadAllQuestions) { // Switch is ON (checked), load all questions
+            questionsToLoad = [...allQuestionsFromJSON]; 
+            numeroDomandeSelezionate = questionsToLoad.length;
+        } else { // Switch is OFF (unchecked), load specific number
+            const numDomandeInput = parseInt(document.getElementById('numDomande').value);
+            // Ensure numDomandeInput is valid and does not exceed available questions
+            numeroDomandeSelezionate = (numDomandeInput > 0 && numDomandeInput <= allQuestionsFromJSON.length) ? numDomandeInput : allQuestionsFromJSON.length;
+            
+            // Take the first 'numeroDomandeSelezionate' questions
+            questionsToLoad = allQuestionsFromJSON.slice(0, numeroDomandeSelezionate);
+        }
+        
+        // Now, if randomization is requested, shuffle only the `questionsToLoad` array
+        if (randomOrder) {
+          questionsToLoad = shuffle(questionsToLoad);
+        }
+        
+        domande = questionsToLoad; // Assign the processed questions to the global 'domande' array
+        
+        // Randomizza le risposte per ogni domanda (this remains the same and is correct)
+        domande = domande.map(d => ({
+          ...d,
+          risposte: shuffle([...d.risposte])
+        }));
+        
+        indiceCorrente = 0;
+        giuste = 0;
+        errate = 0;
+        risposteErrate = [];
+        
+        mostraDomanda();
+      };
+      reader.readAsText(e.target.files[0]);
+    });
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function mostraDomanda() {
+      const container = document.getElementById('quizContainer');
+      const feedback = document.getElementById('feedback');
+      const nextBtn = document.getElementById('nextBtn');
+      const quizControls = document.getElementById('quizControls');
+      
+      // Nascondi il pulsante "Avanti"
+      nextBtn.style.display = 'none';
+      
+      // Mostra il pulsante "Controlla Risposta"
+      document.getElementById('controllaBtn').style.display = 'block';
+      
+      // Cancella eventuali timeout in corso
+      if (timeoutErrore) {
+        clearTimeout(timeoutErrore);
+        timeoutErrore = null;
+      }
+      
+      feedback.innerText = '';
+      document.getElementById('statistiche').innerHTML = '';
+      document.getElementById('erroriDettagli').innerHTML = '';
+
+      if (indiceCorrente >= domande.length) {
+        container.innerHTML = `<div class="domanda"><strong>Quiz completato! (${domande.length} domande)</strong></div>`;
+        document.getElementById('controllaBtn').style.display = 'none';
+        nextBtn.style.display = 'none';
+        quizControls.style.display = 'block'; // Show controls when quiz is completed
+
+        const tot = domande.length;
+        const perc = tot > 0 ? Math.round((giuste / tot) * 100) : 0;
+        const stat = `
+          <p><strong>Corrette:</strong> ${giuste} / ${tot}</p>
+          <p><strong>Errate:</strong> ${errate} / ${tot}</p>
+          <p><strong>Percentuale:</strong> ${perc}%</p>
+        `;
+        document.getElementById('statistiche').innerHTML = stat;
+
+        if (risposteErrate.length > 0) {
+          const dettagli = document.getElementById('erroriDettagli');
+          dettagli.innerHTML = `<details>
+            <summary>Mostra le risposte errate (${risposteErrate.length})</summary>
+            ${risposteErrate.map((item, index) => `
+              <div class="box-risposte">
+                <p><strong>Domanda ${index + 1}:</strong> ${item.domanda}</p>
+                <p><span class="errata">Risposta data:</span> ${item.selezionate.join(", ")}</p>
+                <p><span class="corretta">Risposta corretta:</span> ${item.corretta.join(", ")}</p>
+              </div>
+            `).join('')}
+          </details>`;
+          renderMathInElement(dettagli, katexOptions);
+        }
+
+        return;
+      }
+
+      // Hide controls when quiz starts
+      if (indiceCorrente === 0 && domande.length > 0) {
+        quizControls.style.display = 'none';
+      }
+
+      const domanda = domande[indiceCorrente];
+      container.innerHTML = `
+        <div class="domanda">Domanda ${indiceCorrente + 1}/${domande.length}: ${domanda.domanda}</div>
+        ${domanda.risposte.map((r, i) => `
+          <div class="risposta" data-value="${r}">
+            <span class="latex">${r}</span>
+            <span class="shortcut-badge">${i+1}</span>
+          </div>
+        `).join('')}
+        <div class="shortcut-hint">Usa i tasti 1-${Math.min(domanda.risposte.length, 9)} per selezionare le risposte</div>
+        <div class="shortcut-hint">Premi la barra spaziatrice per inviare la risposta</div>
+      `;
+
+      // Aggiungi event listener per la selezione manuale (singola risposta)
+      const risposteElements = document.querySelectorAll('.risposta');
+      risposteElements.forEach(risposta => {
+        risposta.addEventListener('click', function() {
+          // Deseleziona tutte le altre risposte
+          risposteElements.forEach(r => r.classList.remove('selected'));
+          // Seleziona solo questa risposta
+          this.classList.add('selected');
+        });
+      });
+
+      renderMathInElement(container, katexOptions);
+    }
+
+    function controllaRisposta() {
+      const selezionate = Array.from(document.querySelectorAll('.risposta.selected'))
+                              .map(el => el.getAttribute('data-value'));
+      const domanda = domande[indiceCorrente];
+      const corrette = [domanda.corretta];
+      if (domanda.corretta2 && domanda.corretta2.trim() !== "") {
+        corrette.push(domanda.corretta2);
+      }
+
+      const giusteScelte = selezionate.filter(r => corrette.includes(r)).length;
+      const sbagliate = selezionate.length - giusteScelte;
+
+      const feedback = document.getElementById('feedback');
+      const nextBtn = document.getElementById('nextBtn');
+      const controllaBtn = document.getElementById('controllaBtn');
+      
+      if (giusteScelte === corrette.length && sbagliate === 0) {
+        giuste++;
+        feedback.innerHTML = '<div class="feedback-correzione" style="border-left-color: var(--correct);">✅ Risposta corretta!</div>';
+        indiceCorrente++;
+        setTimeout(mostraDomanda, 300);
+      } else {
+        errate++;
+        feedback.innerHTML = `
+          <div class="feedback-correzione">
+            <div>❌ Risposta errata.</div>
+            <div style="margin-top: 10px;">La risposta corretta è:</div>
+            <div class="corretta">${corrette.join(', ')}</div>
+            <div class="shortcut-hint">Premi la barra spaziatrice o clicca "Avanti" per continuare</div>
+          </div>
+        `;
+        
+        risposteErrate.push({
+          domanda: domanda.domanda,
+          selezionate: selezionate.length ? selezionate : ['(nessuna risposta)'],
+          corretta: corrette
+        });
+        
+        // Nascondi il pulsante "Controlla"
+        controllaBtn.style.display = 'none';
+        
+        // Mostra il pulsante "Avanti"
+        nextBtn.style.display = 'inline-block';
+        
+        renderMathInElement(feedback, katexOptions);
+        
+        // Rimuovi o commenta la riga seguente per disabilitare lo skip automatico
+        // timeoutErrore = setTimeout(() => {
+        //   indiceCorrente++;
+        //   mostraDomanda();
+        // }, 5000);
+      }
+    }
+    
+    function avantiManualmente() {
+      // Avanza manualmente alla prossima domanda
+      indiceCorrente++;
+      mostraDomanda();
+    }
+    
+    // Applica il tema scuro a KaTeX
+    document.addEventListener('DOMContentLoaded', function() {
+      renderMathInElement(document.body, {
+        ...katexOptions,
+        output: 'html',
+        fleqn: false,
+        throwOnError: false,
+        strict: 'ignore',
+        trust: false,
+        preProcess: (math) => math,
+        postProcess: (math) => math,
+        errorCallback: (msg, err) => console.error(msg, err),
+        displayMode: false,
+        globalGroup: false,
+        colorIsTextColor: true,
+        maxSize: Infinity,
+        maxExpand: 1000,
+        allowedProtocols: ['http', 'https', 'mailto', '_relative'],
+        delimiters: katexOptions.delimiters,
+        ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+        ignoredClasses: ['tex-ignore'],
+        // Forza i colori scuri per KaTeX
+        macros: {
+          "\\color": "\\textcolor"
+        }
+      });
+      // Trigger initial state for the toggle switch
+      document.getElementById('questionLoadToggle').dispatchEvent(new Event('change'));
+    });
+  </script>
+</body>
+</html>
